@@ -1,8 +1,8 @@
 helpers: require "./helpers"
 
-exports.reporters: require "./reporters"
+reporters: exports.reporters: require "./reporters"
 
-exports.Suite: class Suite
+Suite: exports.Suite: class Suite
     constructor: (name) ->
         @name: name or "TestSuite"
         @tests: []
@@ -11,12 +11,12 @@ exports.Suite: class Suite
         @tests ||= []
         @tests: helpers.append @tests, testCase
 
-exports.Case: class Case
+Case: exports.Case: class Case
     constructor: (name, testableBlock) ->
         @name: name
         @test: testableBlock
 
-exports.Runner: class Runner
+Runner: exports.Runner: class Runner
     constructor: (reporter) ->
         @reporter: reporter
 
@@ -41,9 +41,22 @@ exports.Runner: class Runner
 
         @reporter.end(this)
 
-exports.suite: new Suite()
-exports.test: (caseName, testableBlock)->
-    exports.suite.add(new Case(caseName, testableBlock))
+
+knownSuites: {}
+test: exports.test: (caseName, testableBlock)->
+    baseName: (f) ->
+        a: f.split '/'
+        a[a.length-1]
+
+    suiteName: module.parent.exports.name || baseName module.parent.filename
+    suite: knownSuites[suiteName] ||= new Suite(suiteName)
+    suite.add(new Case(caseName, testableBlock))
+
+main: exports.main: ->
+    reporter = new reporters.TextReporter()
+    runner = new Runner(reporter)
+    runner.addSuite(suite) for suiteName, suite of knownSuites
+    runner.run()
 
 helpers.makeGlobal "test", exports.test
 
