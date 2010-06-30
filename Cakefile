@@ -3,66 +3,49 @@ fs: require "fs"
 sys: require "sys"
 puts: sys.puts
 {spawn, exec}: require "child_process"
+fs: require 'fs'
+path: require 'path'
 
-option "-c", "--config [FILE]", "configuration file to load"
+COFFEE_ARGS: ['--no-wrap', '-c']
+BUILD_DIR: 'lib'
+SOURCE_DIR: 'src'
 
-options: {}
+directoryWalker: (dir, callback, maxLevels, currentLevel, fromRoot) ->
+  maxLevels: if 'number' is typeof maxLevels then maxLevels else 0
+  currentLevel: if 'number' is typeof currentLevel then currentLevel else 1
+  fromRoot: if 'string' is typeof fromRoot then fromRoot else ''
 
-findCoffeeFiles: (dir) ->
-    files: fs.readdirSync dir
-    file for file in files when file.match(/\.coffee$/)
+  fs.readdir dir, (error, files) ->
+    if error
+      puts error.message
+      return
 
-compileOptions: (source) ->
-  o: {source: source}
-  o['no_wrap']: options['no-wrap']
-  o
+    files.forEach (file) ->
+      fs.stat path.join(dir, file), (error, stats) ->
+        if error
+          puts error.message
+          return
 
-sourceFile: (file, opts) ->
-    opts.dirs.source + "/" + file
+        if stats.isDirectory()
+          if 0 is maxLevels or maxLevels > currentLevel
+            directoryWalker path.join(dir, file), callback,
+                            maxLevels, 1 + currentLevel,
+                            fromRoot + file + '/'
+        callback.call stats, file, fromRoot, path.join(dir, file), stats
 
-outputFile: (file, opts) ->
-    opts.dirs.output + "/" + file.replace(/\.coffee$/, '.js')
+run: (cmd, args) ->
+  proc: spawn cmd, args
+  proc.addListener 'error', (err) -> if err then puts err
 
-compile: (file, opts, callback) ->
-    fs.readFile "$opts.dirs.source/$file", (err, code) ->
-        if err
-            puts "Error! [$err]"
-        else
-            puts "Compiling " + sourceFile(file, opts) + " to " + outputFile(file, opts)
-            code: coffee.compile code.toString()
-            fs.writeFile outputFile(file, opts), code
-            if callback
-                callback()
-
-task "compile", "Compiles all of the CoffeeScript into executable JavaScript", (incoming_options) ->
-    src_dir: options.source or "src"
-    options.dirs: {
-        source: incoming_options.source or "src",
-        output: incoming_options.output or "lib",
-    }
-    files: findCoffeeFiles options.dirs.source
-    compile(file, options) for file in files
-
-
-task "test", "Compile and run all tests", (incoming_options) ->
-    invoke "compile", incoming_options
-    src_dir: incoming_options.tests or "tests"
-    test_options: {
-        dirs: {
-            source: incoming_options.source or "tests",
-            output: incoming_options.output or "tests",
-        }
-    }
-    files: findCoffeeFiles test_options.dirs.source
-    execCallback: (error, stdout, stderr) ->
-        if stderr.length > 0
-            puts stderr
-        if stdout.length > 0
-            puts stdout
-    for file in files
-        compile(file, test_options, ->
-            test_file: "./$test_options.dirs.output/" + file.replace(/\.coffee/, '.js')
-            puts "running " + test_file
-            exec "node " + test_file, execCallback
-        )
+task 'build', 'Build from source', ->
+  dirs: {}
+  directoryWalker SOURCE_DIR, (file, shortPath, fullPath) ->
+    if @isDirectory()
+      run 'mkdir', [BUILD_DIR + '/' + shortPath + file]
+    else if /\.coffee$/.test file
+      args: Array::slice.call COFFEE_ARGS
+      args.push.apply args, ['-o', BUILD_DIR + '/' + shortPath, fullPath]
+      run 'coffee', args
+    else if /\.(js|node|addon)$/.test file
+      run 'cp', [fullPath, BUILD_DIR + '/' + shortPath + file]
 
