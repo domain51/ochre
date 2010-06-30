@@ -2,14 +2,16 @@ assert: require "assert"
 sys: require "sys"
 puts: sys.puts
 
-ochre: require "../lib/ochre"
+ochre: require "../src/ochre"
 test: ochre.test
 
-exports.name = "Full test suite for Ochre"
+tests: {
+    name: "Full test suite for Ochre"
+    test_case: require "./test_case"
+    test_helpers: require "./test_helpers"
+}
 
-test "hello world example", ->
-    assert.ok true
 
-if module == require.main
-    ochre.main()
+if ochre.shouldRun module
+    ochre.run(tests)
 

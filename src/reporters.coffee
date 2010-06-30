@@ -18,7 +18,7 @@ exports.Reporter: class Reporter
     startCase: (testCase) ->
         ++@totals.run
     endCase: (testCase) ->
-    caseSucceed: (testCase) ->
+    caseSucceeded: (testCase) ->
         ++@totals.pass
     caseFailed: (testCase, err) ->
         ++@totals.fail
@@ -35,10 +35,14 @@ exports.TextReporter: class BasicTextReporter extends Reporter
 
     startSuite: (suite) ->
         super()
+        if suite.insideSuite
+            return
         puts "Starting test suite: $suite.name"
 
     endSuite: (suite) ->
         super()
+        if suite.insideSuite
+            return
         puts ""
         if @totals.fail > 0
             puts "Failures:"
@@ -47,7 +51,7 @@ exports.TextReporter: class BasicTextReporter extends Reporter
                 puts ""
         puts "Stats Total/Pass/Fail: $@totals.run/$@totals.pass/$@totals.fail"
 
-    caseSucceed: (testCase) ->
+    caseSucceeded: (testCase) ->
         super(testCase)
         sys.print "."
 

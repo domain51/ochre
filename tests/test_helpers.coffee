@@ -1,7 +1,7 @@
 assert: require "assert"
-ochre: require "../lib/ochre"
+ochre: require "../src/ochre"
 
-helpers: require "../lib/helpers"
+helpers: require "../src/helpers"
 
 exports.name: "Test Suite for various helper functions"
 exports.tests: {
