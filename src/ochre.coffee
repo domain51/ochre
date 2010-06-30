@@ -58,5 +58,4 @@ main: exports.main: ->
     runner.addSuite(suite) for suiteName, suite of knownSuites
     runner.run()
 
-helpers.makeGlobal "test", exports.test
 

@@ -3,6 +3,7 @@ sys: require "sys"
 puts: sys.puts
 
 ochre: require "../lib/ochre"
+test: ochre.test
 
 exports.name = "Full test suite for Ochre"
 
