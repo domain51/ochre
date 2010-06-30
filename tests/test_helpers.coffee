@@ -44,5 +44,30 @@ exports.tests: {
         assert.equal 1, suite.tests[0].tests.length
         assert.equal emptyFunc suite.tests[0].tests[0]
 
+    "generateSuite looks for a test prefix if in strict mode": ->
+        one: -> "one"
+        two: -> "two"
+
+        someHash: {
+            "should not be in the tests": one
+            "test should be picked up": two
+        }
+
+        suite: helpers.generateSuite someHash, {strictMode: true}
+        assert.equal 1, suite.tests.length
+
+    "in strict mode, generateSuite doesn't pay attention to case to determine tests": ->
+        emptyFunc: ->
+        someHash: {
+            "TEST should be picked up": emptyFunc
+            "Test should be picked up": emptyFunc
+            "TeSt should be picked up": emptyFunc
+            "test should be picked up": emptyFunc
+        }
+
+        suite: helpers.generateSuite someHash, {strictMode: true}
+        assert.equal 4, suite.tests.length
+
+
 }
 

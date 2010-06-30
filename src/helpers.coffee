@@ -13,7 +13,20 @@ exports.extend: (first, second) ->
 #
 # Function for generating a `Suite` out of a provided hash
 #
-generateSuite: exports.generateSuite: (hash) ->
+# By default, this does not operate according to the
+# [CommonJS](http://wiki.commonjs.org/wiki/Unit_Testing/1.0) `test`
+# specification.  Instead of only taking functions that only start with the
+# phrase "test", it takes all functions and adds them to the tests.  This
+# allows for plain-English (or your preferred language) to be used in
+# describing the test case.
+#
+# You can limit the tests to include only those functions that have a prefix of
+# "test" (case-insensitive) at the beginning by including `strictMode: true` in
+# the `options` parameter.
+#
+generateSuite: exports.generateSuite: (hash, options) ->
+    options ||= {}
+    options.strictMode ||= false
     suite: new ochre.Suite()
     for key, val of hash
         if key == 'name'
@@ -21,7 +34,8 @@ generateSuite: exports.generateSuite: (hash) ->
         else if typeof val == "object"
             suite.add generateSuite val
         else if typeof val == "function"
-            suite.add new ochre.Case(key, val)
+            if !options.strictMode or key[0..3].toLowerCase() == "test"
+                suite.add new ochre.Case(key, val)
     suite
 
 # 
