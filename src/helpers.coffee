@@ -18,8 +18,8 @@ generateSuite: exports.generateSuite: (hash) ->
     for key, val of hash
         if key == 'name'
             suite.name: val
-        else if val.tests
-            suite.add(generateSuite val.tests)
+        else if typeof val == "object"
+            suite.add generateSuite val
         else if typeof val == "function"
             suite.add new ochre.Case(key, val)
     suite
